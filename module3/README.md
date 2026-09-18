@@ -1,3 +1,5 @@
+See `run_comparison.md` for thoughts on the program's results.
+
 ### Thoughts on the provided code snippet on Canvas
 
 Good:
