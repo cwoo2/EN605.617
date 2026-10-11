@@ -1,0 +1,1 @@
+I asked AI if there was an easy way to get and check the error code for each CUDA call and it came up with the CUDA_CHECK macro used in the assignment code.

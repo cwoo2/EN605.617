@@ -204,10 +204,10 @@ __host__ float run_cpu(const uchar4 *host_in, uchar4 *host_ref, int width, int h
     const int num_pixels = width * height;
 
     const auto start = std::chrono::high_resolution_clock::now();
-    for (int f = 0; f < num_frames; ++f)
+    for (int i = 0; i < num_frames; ++i)
     {
-        const uchar4 *src = host_in + static_cast<size_t>(f) * num_pixels;
-        uchar4 *dst = host_ref + static_cast<size_t>(f) * num_pixels;
+        const uchar4 *src = host_in + static_cast<size_t>(i) * num_pixels;
+        uchar4 *dst = host_ref + static_cast<size_t>(i) * num_pixels;
 
         invert_and_blur_cpu(src, dst, width, height);
     }
@@ -245,10 +245,10 @@ __host__ float run_kernels_blocking(const uchar4 *host_in, uchar4 *host_out, int
 
     // Run the kernels on each frame sequentially
     const float ms = time_kernel_ms([&] {
-        for (int f = 0; f < num_frames; ++f)
+        for (int i = 0; i < num_frames; ++i)
         {
-            const uchar4 *src = host_in + static_cast<size_t>(f) * num_pixels;
-            uchar4 *dst = host_out + static_cast<size_t>(f) * num_pixels;
+            const uchar4 *src = host_in + static_cast<size_t>(i) * num_pixels;
+            uchar4 *dst = host_out + static_cast<size_t>(i) * num_pixels;
 
             CUDA_CHECK(cudaMemcpy(d_in, src, frame_bytes, cudaMemcpyHostToDevice));
             invert_kernel<<<invert_blocks, invert_threads>>>(d_in, d_temp, num_pixels);
@@ -359,9 +359,9 @@ int main(int argc, char **argv)
 
     // Seed rng and generate a number of frames to represent a video
     srand(FRAME_SEED);
-    for (int f = 0; f < num_frames; ++f)
+    for (int i = 0; i < num_frames; ++i)
     {
-        generate_frame(host_in + static_cast<size_t>(f) * frame_pixels, width, height);
+        generate_frame(host_in + static_cast<size_t>(i) * frame_pixels, width, height);
     }
 
     // Run CPU version
