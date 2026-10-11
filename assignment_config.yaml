@@ -1,7 +1,9 @@
-folder: module5/convolution
+folder: module6
 
 build:
-  - [] 
+  - []
 
 run:
-  - [512, 256]
+  - [300, 320, 240, 4]
+  - [300, 640, 480, 4]
+  - [150, 1280, 720, 4]
