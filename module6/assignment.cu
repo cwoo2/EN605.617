@@ -265,6 +265,7 @@ __host__ float run_kernels_blocking(const uchar4 *host_in, uchar4 *host_out, int
 }
 
 // Run the CUDA kernels with streaming memory transfers of each frame to/from the GPU
+// Uses events
 __host__ float run_kernels_streaming(const uchar4 *host_in, uchar4 *host_out, int width, int height,
                                      const int num_frames, const int num_streams)
 {
@@ -275,6 +276,7 @@ __host__ float run_kernels_streaming(const uchar4 *host_in, uchar4 *host_out, in
     uchar4 *d_temp[MAX_STREAMS];
     uchar4 *d_out[MAX_STREAMS];
     cudaStream_t streams[MAX_STREAMS];
+    cudaEvent_t copy_done[MAX_STREAMS];
 
     for (int i = 0; i < num_streams; ++i)
     {
@@ -282,6 +284,7 @@ __host__ float run_kernels_streaming(const uchar4 *host_in, uchar4 *host_out, in
         CUDA_CHECK(cudaMalloc(&d_temp[i], frame_bytes));
         CUDA_CHECK(cudaMalloc(&d_out[i], frame_bytes));
         CUDA_CHECK(cudaStreamCreateWithFlags(&streams[i], cudaStreamNonBlocking));
+        CUDA_CHECK(cudaEventCreateWithFlags(&copy_done[i], cudaEventDisableTiming));
     }
 
     const int invert_threads = 256;
@@ -310,13 +313,21 @@ __host__ float run_kernels_streaming(const uchar4 *host_in, uchar4 *host_out, in
                                                                        height);
             CUDA_CHECK(cudaMemcpyAsync(host_out + static_cast<size_t>(i) * num_pixels, d_out[stream_idx], frame_bytes,
                                        cudaMemcpyDeviceToHost, stream));
+
+            // Signal that this frame is done being processed and copied back to the host
+            CUDA_CHECK(cudaEventRecord(copy_done[stream_idx], stream));
         }
 
-        CUDA_CHECK(cudaDeviceSynchronize());
+        // Wait on each stream's completion event before returning
+        for (int i = 0; i < num_streams; ++i)
+        {
+            CUDA_CHECK(cudaEventSynchronize(copy_done[i]));
+        }
     });
 
     for (int i = 0; i < num_streams; ++i)
     {
+        CUDA_CHECK(cudaEventDestroy(copy_done[i]));
         CUDA_CHECK(cudaStreamDestroy(streams[i]));
         CUDA_CHECK(cudaFree(d_in[i]));
         CUDA_CHECK(cudaFree(d_temp[i]));
