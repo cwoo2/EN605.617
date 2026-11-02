@@ -1,0 +1,4 @@
+- Used AI to help create the error checking macros in check.h
+- Used AI to write the generateImage function in assignment.cu
+  - Essentially I asked it to help me generate a simple binary image that would 
+    make it easy to clearly see the results of an edge detection algorithm. 

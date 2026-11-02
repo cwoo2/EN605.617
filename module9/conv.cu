@@ -1,6 +1,8 @@
 #include "check.h"
 #include "conv.h"
 
+constexpr int THREADS_PER_BLOCK = 256;
+
 // im2col: one row per output pixel, one column per patch element
 __global__ void im2colKernel(const float *img, float *cols, ConvShape s)
 {
@@ -48,9 +50,8 @@ int ConvShape::numOutputElements() const
 void im2col(const float *d_img, float *d_cols, ConvShape s)
 {
     const int total = s.numOutputElements() * s.patchElements();
-    const int threads = 256;
-    const int blocks = (total + threads - 1) / threads;
-    im2colKernel<<<blocks, threads>>>(d_img, d_cols, s);
+    const int blocks = (total + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+    im2colKernel<<<blocks, THREADS_PER_BLOCK>>>(d_img, d_cols, s);
     CUDA_CHECK(cudaGetLastError());
 }
 
